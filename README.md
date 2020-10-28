@@ -122,14 +122,3 @@ An example output image is (note the Beetle as a distractor):
 
 ![training image](figures/1_none.png)  
 
-
--selected] [--scale] [--rotation]  
-                            [ --num NUM] [--dontocclude] [--add_distractors]  
-                            root exp
-</pre>
-
-most of the options and parameters are in default.py, e.g. the path to the background and to the distractors. 
-
-An example output image is (note the Beetle as a distractor):
-
-![training image](figures/1_none.png)
