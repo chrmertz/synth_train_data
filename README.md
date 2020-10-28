@@ -35,6 +35,8 @@ The program takes an image and with some user input it separates the forground o
 
 ![grabcut result](file:///home/mertz/publish_code/syn_train_data/figures/grabcut_output1.jpg)
 
+![grabcut result](figures/grabcut_output1.jpg)
+
 ### creating from 2D objects
 
 Examples of 2D objects are traffic signs, they have only significant extensions in two dimentions. A Stop sign images is in the directory `traffic_sign`. Note that areas in the image that are not part of the stop sign have a transparency of 1.  To separate this RGBA image into a RGB image and a mask in our format, use:  
@@ -121,4 +123,3 @@ most of the options and parameters are in default.py, e.g. the path to the backg
 An example output image is (note the Beetle as a distractor):
 
 ![training image](file:///home/mertz/publish_code/syn_train_data/figures/1_none.png)  
-
