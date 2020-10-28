@@ -33,8 +33,6 @@ The original program and documentation can be found in opencv: [grabcut](https:/
 A modified version can be found at `tools/grabcut_new.py`. The original program crashed.   
 The program takes an image and with some user input it separates the forground object from the background. An example result (from the documentation):
 
-![grabcut result](file:///home/mertz/publish_code/syn_train_data/figures/grabcut_output1.jpg)
-
 ![grabcut result](figures/grabcut_output1.jpg)
 
 ### creating from 2D objects
@@ -52,8 +50,8 @@ Since the object is effectively 2D, a rotation in 3D space is an afine transform
 Here is one example result, a roated stop sign and the corresponding mask:
 
 
-![owl](file:///home/mertz/publish_code/syn_train_data/figures/rotated_stop.png)
-![owl](file:///home/mertz/publish_code/syn_train_data/figures/rotated_stop_mask.png)
+![owl](figures/rotated_stop.png)
+![owl](figures/rotated_stop_mask.png)
 
 
 ### creating from 3D objects
@@ -62,12 +60,12 @@ The 3D objects can come from an existing mesh, a CAD model, or from an object at
 
 Here are the steps to create a mesh starting from a real object:
 
-![owl](file:///home/mertz/publish_code/syn_train_data/figures/owl.jpg)
+![owl](figures/owl.jpg)
 
 1. Take pictures of the objects from all sides. An example set of images of an owl is in `make3D/images`. 
 
 2. Use Colmap to to create a mesh model. The set of commands you need are in the script `make3D/make_dense`. The result is:  
- ![owl](file:///home/mertz/publish_code/syn_train_data/figures/owl_mesh00.png)   
+ ![owl](figures/owl_mesh00.png)   
 Use CloudCompare to remove extraneous parts of the mesh. Note that it is in gerneral difficult to get a nice 3D mesh from pictures, don't be surprised if the script does not give a good result the first time you try it with your own pictures. Even the reconstruction shown here has some errors, e.g. there are white areas on the beak and ears of the owl. To get a better model one has to clean the dense point cloud and create the mesh e.g. by using meshlab. 
 
 3. Open the cleaned mesh in CouldCompare and take snapshots of it from different angles with white background. A convenient way to create a lot of the snapshots in a systematic way is to use the the video function in CloudCompare. 
@@ -81,8 +79,8 @@ Use CloudCompare to remove extraneous parts of the mesh. Note that it is in gern
 It creates the mask by considering all the white pixels as background. It also creates a new image where all the background is black.  
 
 
- ![mask](file:///home/mertz/publish_code/syn_train_data/figures/owl_mask.png) 
-![image](file:///home/mertz/publish_code/syn_train_data/figures/owl_image.png) 
+ ![mask](figures/owl_mask.png) 
+![image](figures/owl_image.png) 
 
 
 ## Generating dataset
@@ -114,6 +112,18 @@ Additionally there are the labels and annotations in `*.txt` and `*.xml` files.
 Some of the options can be choosen as arguments:
 <pre>
 usage: dataset_generator.py [-h] [--selected] [--scale] [--rotation]  
+                            [ --num NUM] [--dontocclude] [--add_distractors]  
+                            root exp
+</pre>
+
+most of the options and parameters are in default.py, e.g. the path to the background and to the distractors. 
+
+An example output image is (note the Beetle as a distractor):
+
+![training image](figures/1_none.png)  
+
+
+-selected] [--scale] [--rotation]  
                             [ --num NUM] [--dontocclude] [--add_distractors]  
                             root exp
 </pre>
