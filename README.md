@@ -25,7 +25,7 @@ This method creates synthetic data by pasting objects on top of background image
 
 ## objects and masks
 
-The input to the syntheic data generator are images of the objects and corresponding masks. We will describe three different methods to obtain them:  grabcut, creating from 2D objects, and creating from 3D objets.
+The input to the syntheic data generator are images of the objects and corresponding masks. We will describe three different methods to obtain them:  grabcut, creating from 2D objects, and creating from 3D objets. 
 
 ### grabcut
 
@@ -132,6 +132,4 @@ most of the options and parameters are in default.py, e.g. the path to the backg
 
 An example output image is (note the Beetle as a distractor):
 
-![training image](figures/1_none.png)  
-
-ish_code/syn_train_data/figures/1_none.png)  
+![training image](figures/1_none.png)
