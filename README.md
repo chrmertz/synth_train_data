@@ -38,14 +38,15 @@ The program takes an image and with some user input it separates the forground o
 ### creating from 2D objects
 
 Examples of 2D objects are traffic signs, they have only significant extensions in two dimentions. A Stop sign images is in the directory `traffic_sign`. Note that areas in the image that are not part of the stop sign have a transparency of 1.  To separate this RGBA image into a RGB image and a mask in our format, use:  
-
-   `python3 RGBA2RGB_mask.py inputDir outputDir`
-
+<pre>
+   python3 RGBA2RGB_mask.py inputDir outputDir
+</pre>
 where `inputDir` contains the RGBA image and the resulting RGB image and mask are saved in `outputDir`
 
 Since the object is effectively 2D, a rotation in 3D space is an afine transformation in the image. A new set of images where the object is rotated around the x and y axis can be created with:
-
-`python3 perspective_warp.py image_basename` 
+<pre>
+   python3 perspective_warp.py image_basename
+</pre>
 
 Here is one example result, a roated stop sign and the corresponding mask:
 
@@ -92,9 +93,9 @@ Changes from the original:
  - pasting the objects is done with transparency, gives more acurate results on the edges of the object   
 
 The python script `dataset_generator.py` creates the  dataset. As example we have the object in `root`, the background in `background` and the distractor objects in `distractor`.  When you run it like this:
-
-`python3 dataset_generator.py --scale --rotation --num 1 --add_distractors root train_out`  
-
+<pre>
+   python3 dataset_generator.py --scale --rotation --num 1 --add_distractors root train_out
+</pre>
 you will get the resulting training data in `train_out` and a label file `train_out.txt`. The training images are in `train_out/images`, the format labels in simple ASCII is:
 
 <pre>
@@ -121,4 +122,3 @@ most of the options and parameters are in default.py, e.g. the path to the backg
 An example output image is (note the Beetle as a distractor):
 
 ![training image](figures/1_none.png)  
-
