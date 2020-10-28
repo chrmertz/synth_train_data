@@ -132,4 +132,6 @@ most of the options and parameters are in default.py, e.g. the path to the backg
 
 An example output image is (note the Beetle as a distractor):
 
-![training image](file:///home/mertz/publish_code/syn_train_data/figures/1_none.png)  
+![training image](figures/1_none.png)  
+
+ish_code/syn_train_data/figures/1_none.png)  
