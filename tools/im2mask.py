@@ -87,5 +87,5 @@ for filename in listing:
     imgB[np.where((im_mask==[0,0,0]).all(axis=2))] = [0,0,0]
     
 
-    cv2.imwrite(name_im_out,imB)
+    cv2.imwrite(name_im_out,imgB)
     
