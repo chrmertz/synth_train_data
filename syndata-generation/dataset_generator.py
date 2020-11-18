@@ -239,7 +239,10 @@ def PIL2array3C(img):
     Returns:
         NumPy Array: Converted image
     '''
-    
+    #print('mode, img.size[1], img.size[0]: ',img.mode,' ', img.size[1], ' ',img.size[0])
+    if img.mode != 'RGB' :
+        print('### WARNING ###: The image mode should be RGB but it is: ',img.mode)
+        print('                 If the program crashes, you have an unsuitable image, probably an unsuitable background image in png format')
     return np.array(img.getdata(),
                     np.uint8).reshape(img.size[1], img.size[0], 3)
 
@@ -325,6 +328,8 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
     while True:
         top = Element('annotation')
         background = Image.open(bg_file)
+        print('background file: ',bg_file)
+        #print('img_file: ', img_file)
         background = background.resize((w, h), Image.ANTIALIAS)
         backgrounds = []
         for i in range(len(blending_list)):
@@ -334,6 +339,7 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
             already_syn = []
         for idx, obj in enumerate(all_objects):
            foreground = Image.open(obj[0])
+           #print('foreground: ', obj[0])
            xmin, xmax, ymin, ymax = get_annotation_from_mask_file(get_mask_file(obj[0]))
            if xmin == -1 or ymin == -1 or xmax-xmin < MIN_WIDTH or ymax-ymin < MIN_HEIGHT :
                continue
@@ -634,15 +640,15 @@ def parse_args():
 
 if __name__ == '__main__':
 
-    pr = cProfile.Profile()
-    pr.enable()
+    ##pr = cProfile.Profile()
+    ##pr.enable()
 
     args = parse_args()
     generate_synthetic_dataset(args)
 
-    pr.disable()
+    ##pr.disable()
     #pr.print_stats()
     #pr.sort_stats(SortKey.CUMULATIVE)
     #pr.print_stats(10)
     #pr.print_stats(sort='time')
-    pr.print_stats(sort=('cumtime'))
+    ##pr.print_stats(sort=('cumtime'))
