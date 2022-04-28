@@ -56,9 +56,12 @@ def LinearMotionBlur3C(img):
     lineLengths = [3,5,7,9]
     lineTypes = ["right", "left", "full"]
     lineLengthIdx = np.random.randint(0, len(lineLengths))
-    lineTypeIdx = np.random.randint(0, len(lineTypes)) 
+    #lineTypeIdx = np.random.randint(0, len(lineTypes))
+    # instead of choosing it randomly, we take "full", otherwise the object will shift:
+    lineTypeIdx = 2
     lineLength = lineLengths[lineLengthIdx]
     lineType = lineTypes[lineTypeIdx]
+    #print(lineType)
     lineAngle = randomAngle(lineLength)
     blurred_img = img
     for i in range(3):
@@ -230,6 +233,7 @@ def PIL2array1C(img):
     '''
     return np.array(img.getdata(),
                     np.uint8).reshape(img.size[1], img.size[0])
+    
 
 def PIL2array3C(img):
     '''Converts a PIL image to NumPy Array
@@ -243,8 +247,9 @@ def PIL2array3C(img):
     if img.mode != 'RGB' :
         print('### WARNING ###: The image mode should be RGB but it is: ',img.mode)
         print('                 If the program crashes, you have an unsuitable image, probably an unsuitable background image in png format')
-    return np.array(img.getdata(),
-                    np.uint8).reshape(img.size[1], img.size[0], 3)
+#    return np.array(img.getdata(),
+#                    np.uint8).reshape(img.size[1], img.size[0], 3)
+    return np.array(img)
 
 def create_image_anno_wrapper(args, w=WIDTH, h=HEIGHT, scale_augment=False, rotation_augment=False, blending_list=['none'], dontocclude=False):
    ''' Wrapper used to pass params to workers
@@ -287,17 +292,51 @@ def paste_transparent(background,foreground,mask,mask_org,x,y,kn=3):
     foreground_dilate = foreground.filter(ImageFilter.MaxFilter(kn))
 
     # get the part of the original mask that is 255
-    ret,thresh1 = cv2.threshold(PIL2array1C(mask_org),254,255,cv2.THRESH_BINARY)
+    #ret,thresh1 = cv2.threshold(PIL2array1C(mask_org),254,255,cv2.THRESH_BINARY)
+    ret,thresh1 = cv2.threshold(mask_org,254,255,cv2.THRESH_BINARY)
     mask_thresh = Image.fromarray(thresh1)
 
     # paste the original foreground into the dilated forground. We want to keep the original foreground
     # and have the dilation effects only on the border
     foreground_dilate.paste(foreground,(0,0),mask_thresh)
 
+    #cv2.imwrite("mask_org.png", PIL2array1C(mask_org))
+    #cv2.imwrite("foreground_dilate.png", PIL2array3C(background) )
     
     background.paste(foreground_dilate, (x, y), mask)
 
     return background
+
+def fill_holes(im_in):
+	
+    gray = cv2.cvtColor(im_in, cv2.COLOR_BGR2GRAY)
+    gray = ~gray
+
+    # Threshold.
+    # Set values equal to or above 220 to 0.
+    # Set values below 220 to 255.
+
+    th, im_th = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY_INV);
+
+    # Copy the thresholded image.
+    im_floodfill = im_th.copy()
+
+    # Mask used to flood filling.
+    # Notice the size needs to be 2 pixels than the image.
+    h, w = im_th.shape[:2]
+    mask = np.zeros((h+2, w+2), np.uint8)
+
+    # Floodfill from point (0, 0)
+    cv2.floodFill(im_floodfill, mask, (0,0), 255);
+
+    # Invert floodfilled image
+    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+    
+    # Combine the two images to get the foreground.
+    im_out = im_th | im_floodfill_inv
+
+    return im_out
+
 
 
 def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,  w=WIDTH, h=HEIGHT, scale_augment=False, rotation_augment=False, blending_list=['none'], dontocclude=False):
@@ -332,7 +371,7 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
         #print('img_file: ', img_file)
         background = background.resize((w, h), Image.ANTIALIAS)
         backgrounds = []
-        for i in range(len(blending_list)):
+        for i in range(len(blending_list)+1):
             backgrounds.append(background.copy())
         
         if dontocclude:
@@ -351,8 +390,10 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
            o_w, o_h = orig_w, orig_h
 
            # add padding around foreground and mask, we need that to do the blending correctly
-           # padding of 8, padding color = black 
-           mask = Image.fromarray(cv2.copyMakeBorder(PIL2array1C(mask), 8, 8, 8, 8, cv2.BORDER_CONSTANT, value=[0,0,0]))
+           # padding of 8, padding color = black
+           
+           mask_cv = cv2.copyMakeBorder(PIL2array1C(mask), 8, 8, 8, 8, cv2.BORDER_CONSTANT, value=[0,0,0])
+           mask = Image.fromarray( mask_cv)
            foreground = Image.fromarray(cv2.copyMakeBorder(PIL2array3C(foreground), 8, 8, 8, 8, cv2.BORDER_CONSTANT, value=[0,0,0]))
 
            factor = random.uniform(MIN_BRIGHTNESS, MAX_BRIGHTNESS)
@@ -387,6 +428,9 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
                    foreground_tmp = f_tmp
                    
                    ## Image.fromarray(cv2.blur(PIL2array1C(foreground),(rx,ry))
+                   #mask_tmp = mask.rotate(rot_degrees, expand=True)
+                   #m_tmp_cv = rotation_inter(mask_cv,rot_degrees)
+                   #m_tmp = Image.fromarray(rotation_inter(PIL2array1C(mask,rot_degrees))
                    mask_tmp = mask.rotate(rot_degrees, expand=True)
                    m_tmp = Image.fromarray(rotation_inter(PIL2array1C(mask),rot_degrees))
                    mask_tmp = m_tmp
@@ -394,6 +438,7 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
                    if  w-o_w > 0 and h-o_h > 0:
                         break
                mask = mask_tmp
+               #mask_cv = m_tmp_cv
                foreground = foreground_tmp
            
            xmin, xmax, ymin, ymax = get_annotation_from_mask(mask)
@@ -419,39 +464,99 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
            if dontocclude:
                already_syn.append([x+xmin, x+xmax, y+ymin, y+ymax])
 
-           
-           for i in range(len(blending_list)):
-               if blending_list[i] == 'none' or blending_list[i] == 'motion':
+           mask_cv = PIL2array1C(mask)
+           for i in range(len(blending_list)+1):
+               if i == len(blending_list):
+                  background = backgrounds[i]
+                  background_black = Image.new("RGB", background.size, (0, 0, 0))
+                  foreground_white = Image.new("RGB", foreground.size, (255, 255, 255))
+                  backgrounds[i] = paste_transparent(background_black,foreground_white,mask,mask_cv,x,y)
+                  #cv2.imwrite("background_black.png", PIL2array3C(backgrounds[i]) )
 
-                   backgrounds[i] = paste_transparent(backgrounds[i],foreground,mask,mask,x,y)
+               elif blending_list[i] == 'none' or blending_list[i] == 'motion':
+                   backgrounds[i] = paste_transparent(backgrounds[i],foreground,mask,mask_cv,x,y)
                    
                elif blending_list[i] == 'poisson':
-                  offset = (y, x)
-                  img_mask = PIL2array1C(mask)
-                  img_src = PIL2array3C(foreground).astype(np.float64)
+                    # old way of doing the poisson is to use poisson_blend, but it is quite slow 
+##                  offset = (y, x)
+##                  img_mask = PIL2array1C(mask)
+##                  img_src = PIL2array3C(foreground).astype(np.float64)
                   
-                  img_target = PIL2array3C(backgrounds[i])
-                  img_mask, img_src, offset_adj \
-                       = create_mask(img_mask.astype(np.float64),
-                          img_target, img_src, offset=offset)
-                  background_array = poisson_blend(img_mask, img_src, img_target,
-                                    method='normal', offset_adj=offset_adj)
-                  backgrounds[i] = Image.fromarray(background_array, 'RGB') 
- 
+##                  img_target = PIL2array3C(backgrounds[i])
+##                  img_mask, img_src, offset_adj \
+##                       = create_mask(img_mask.astype(np.float64),
+##                          img_target, img_src, offset=offset)
+##                  background_array = poisson_blend(img_mask, img_src, img_target,
+##                                    method='normal', offset_adj=offset_adj)
+##                  backgrounds[i] = Image.fromarray(background_array, 'RGB')
+
+                  # We will use Clone seamlessly from OpenCV instead of poisson_blend
+                  #print("x: ",x," y: ",y)
+                  #print("mask_x: ",mask.size[0],' mask_y: ',mask.size[1])
+                  #print("background_x: ",backgrounds[i].size[0]," background_y: ",backgrounds[i].size[0])
+
+                  # semalessClone does not work if you place parts of the object outside of the background,
+                  # so we need to crop the mask and foreground to fit into the background image:
+                  left = 0
+                  if x<0 :
+                      left = -x
+
+                  top1 = 0
+                  if y<0 :
+                      top1 = -y
+
+                  right = mask.size[0]
+                  if x+mask.size[0] > backgrounds[i].size[0] :
+                      right = backgrounds[i].size[0] - x
+                  
+                  bottom = mask.size[1]
+                  if y+mask.size[1] > backgrounds[i].size[1] :
+                      bottom = backgrounds[i].size[1] - y
+
+                  #print(" left: ", left, " top1: ", top1, " right: ", right, " bottom: ", bottom)
+                  mask_crop = mask.crop((left, top1, right, bottom))
+                  
+                  foreground_crop = foreground.crop((left, top1, right, bottom))
+
+                  # seamlessClone is weird, it shifts the object unless you take the center of the
+                  # bounding rectangle instead of the center of the mask. Even then, it might be off
+                  # by a pixel or so
+                  mask_crop_cv = PIL2array1C(mask_crop)
+                  #mask_crop_cv[:] = 255
+                  br = cv2.boundingRect(mask_crop_cv) # bounding rect (x,y,width,height)
+                  center = (x+left+ br[0] + br[2] // 2,y+top1+ br[1] + br[3] // 2)
+
+                  #print("center: ", center)
+                  #print("br: ", br)
+                  
+                  #print("mask_crop.size[0]: ", mask_crop.size[0], " mask_crop.size[1]: ", mask_crop.size[1]) 
+                  
+                  #center = (x+left+int(mask_crop.size[0]/2),y+top1+int(mask_crop.size[1]/2))
+                  #center = (x,y)
+                  #print(center)
+                  #cv2.imwrite("mask_crop.png",mask_crop_cv )
+                  output = cv2.seamlessClone(PIL2array3C(foreground_crop),PIL2array3C(backgrounds[i]) , mask_crop_cv , center, cv2.NORMAL_CLONE)
+                  backgrounds[i] = Image.fromarray(output, 'RGB')
+                  #print(" ")
+                  
                elif blending_list[i] == 'gaussian':
                   rx = random.randrange(3, 8,2)
                   ry = random.randrange(3, 8,2)
                   kn = max([rx,ry,3])
-                  mask_gauss = Image.fromarray(cv2.GaussianBlur(PIL2array1C(mask),(rx,ry),2))
-                  backgrounds[i] = paste_transparent(backgrounds[i],foreground,mask_gauss,mask,x,y,kn)
+                  #mask_gauss_cv = cv2.GaussianBlur(mask_cv,(rx,ry),2))
+                  #mask_gauss = Image.fromarray(cv2.GaussianBlur(PIL2array1C(mask),(rx,ry),2))
+                  mask_gauss = Image.fromarray(cv2.GaussianBlur(mask_cv,(rx,ry),2))
+                  backgrounds[i] = paste_transparent(backgrounds[i],foreground,mask_gauss,mask_cv,x,y,kn)
                   
                elif blending_list[i] == 'box':
                   rx = random.randint(2, 6)
                   ry = random.randint(2, 6)
                   
                   kn = max([rx,ry,3])
-                  mask_box = Image.fromarray(cv2.blur(PIL2array1C(mask),(rx,ry)))
-                  backgrounds[i] = paste_transparent(backgrounds[i],foreground,mask_box,mask,x,y,kn)
+                  #mask_box = Image.fromarray(cv2.blur(PIL2array1C(mask),(rx,ry)))
+                  mask_box = Image.fromarray(cv2.blur(mask_cv,(rx,ry)))
+                  backgrounds[i] = paste_transparent(backgrounds[i],foreground,mask_box,mask_cv,x,y,kn)
+                  
 
            if idx >= len(objects):
                continue 
@@ -476,16 +581,21 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
            break
 
     for i in range(len(blending_list)):
+        #if i == len(blending_list):
+        #    print("one time")
+
+        #else :
         if blending_list[i] == 'motion':
             backgrounds[i] = LinearMotionBlur3C(PIL2array3C(backgrounds[i]))
 
-        # we want to have images with and without jpg compression artifacts
+    # we want to have images with and without jpg compression artifacts
         njpg = random.randrange(80, 120, 1)
-        # if njpg is > 100, then we will have no compression artifacts (1/3 of the cases)
-        # else we will have random compression between 80% and 100%
-        # Normal compression for jpg is 90%
+    # if njpg is > 100, then we will have no compression artifacts (1/2 of the cases)
+    # else we will have random compression between 80% and 100%
+    # Normal compression for jpg is 90%
 
-        
+
+
         if njpg<=100 :
             encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), njpg]
             result, encimg = cv2.imencode('.jpg',PIL2array3C(backgrounds[i]) , encode_param)
@@ -494,7 +604,7 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
         backgrounds[i].save(img_file.replace('none', blending_list[i]),quality=100)
 
 
-        
+
         path_list = anno_file.split(os.sep)
         train_file = path_list[0] + ".txt"
         with open(train_file, "a") as ff:
@@ -504,6 +614,23 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
     xmlstr = xml.dom.minidom.parseString(tostring(top)).toprettyxml(indent="    ")
     with open(anno_file, "w") as f:
         f.write(xmlstr)
+
+    ii =  len(blending_list)
+    im_in = PIL2array3C(backgrounds[ii])
+    im_out = fill_holes(im_in)
+
+    pre, ext = os.path.splitext(anno_file)
+    # "owl" needs to be replaced by the real object name and "1" needs to be the number of that object
+    for i in range(len(blending_list)):
+        anno_im_file = pre + "_" + blending_list[i] + "_owl_1.png"
+        cv2.imwrite(anno_im_file,im_out)
+
+
+    #backgrounds[ii].save(anno_im_file)
+    
+    #print(anno_file)
+    #print(anno_im_file)
+    #print("two time")
    
 def gen_syn_data(img_files, labels, img_dir, anno_dir, scale_augment, rotation_augment, dontocclude, add_distractors):
     '''Creates list of objects and distrctor objects to be pasted on what images.
