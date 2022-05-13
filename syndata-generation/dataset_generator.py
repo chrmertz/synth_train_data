@@ -364,6 +364,9 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
         return anno_file
     
     all_objects = objects + distractor_objects
+
+    num_of_objects = len(objects)
+    
     while True:
         top = Element('annotation')
         background = Image.open(bg_file)
@@ -467,10 +470,11 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
            mask_cv = PIL2array1C(mask)
            for i in range(len(blending_list)+1):
                if i == len(blending_list):
-                  background = backgrounds[i]
-                  background_black = Image.new("RGB", background.size, (0, 0, 0))
-                  foreground_white = Image.new("RGB", foreground.size, (255, 255, 255))
-                  backgrounds[i] = paste_transparent(background_black,foreground_white,mask,mask_cv,x,y)
+                  if  idx < num_of_objects :
+                      background = backgrounds[i]
+                      background_black = Image.new("RGB", background.size, (0, 0, 0))
+                      foreground_white = Image.new("RGB", foreground.size, (255, 255, 255))
+                      backgrounds[i] = paste_transparent(background_black,foreground_white,mask,mask_cv,x,y)
                   #cv2.imwrite("background_black.png", PIL2array3C(backgrounds[i]) )
 
                elif blending_list[i] == 'none' or blending_list[i] == 'motion':
