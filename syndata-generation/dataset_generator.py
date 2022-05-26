@@ -624,9 +624,12 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
     im_out = fill_holes(im_in)
 
     pre, ext = os.path.splitext(anno_file)
-    # "owl" needs to be replaced by the real object name and "1" needs to be the number of that object
+
+    label_txt =  objects[0][1]
+    
+    # the following only works for one object
     for i in range(len(blending_list)):
-        anno_im_file = pre + "_" + blending_list[i] + "_owl_1.png"
+        anno_im_file = pre + "_" + blending_list[i] + "_" + label_txt + "_1.png"
         cv2.imwrite(anno_im_file,im_out)
 
 
