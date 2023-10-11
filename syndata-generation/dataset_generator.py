@@ -308,7 +308,13 @@ def paste_transparent(background,foreground,mask,mask_org,x,y,kn=3):
     return background
 
 def fill_holes(im_in):
-	
+
+    # we need to pad the image by one line so that the filling starts from all
+    # sides. If you don't do that and the object intersects the side(s) at
+    # two locations, the filling will be incorrect.
+    # At the end of this function we will remove the extra border.
+    im_in = cv2.copyMakeBorder(im_in, 1,1,1,1, cv2.BORDER_CONSTANT)
+
     gray = cv2.cvtColor(im_in, cv2.COLOR_BGR2GRAY)
     gray = ~gray
 
@@ -334,6 +340,9 @@ def fill_holes(im_in):
     
     # Combine the two images to get the foreground.
     im_out = im_th | im_floodfill_inv
+
+    # Undo the padding (MakeBorader)
+    im_out = im_out[1:-1,1:-1]
 
     return im_out
 
