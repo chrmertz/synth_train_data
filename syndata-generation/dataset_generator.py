@@ -365,6 +365,8 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
         dontocclude(bool): Generate images with occlusion
     '''
 
+    #print('objects:',objects)
+
     if 'none' not in img_file:
         return 
     
@@ -588,6 +590,13 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
            y_max_entry.text = '%d'%(min(h,y+ymax))
            difficult_entry = SubElement(object_root, 'difficult')
            difficult_entry.text = '0' # Add heuristic to estimate difficulty later on
+
+           obj_yolo = obj[1]
+           x_yolo = (((max(1,x+xmin)) + (min(w,x+xmax)))/2)/w
+           y_yolo = (((max(1,y+ymin)) + (min(h,y+ymax)))/2)/h
+           w_yolo = (min(w,x+xmax) - max(1,x+xmin))/w
+           h_yolo = (min(h,y+ymax) - max(1,y+ymin))/h
+           
         if attempt == MAX_ATTEMPTS_TO_SYNTHESIZE:
            continue
         else:
@@ -623,6 +632,15 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
         with open(train_file, "a") as ff:
             ff.write(img_file.replace('none', blending_list[i]) + ',' +  x_min_entry.text + ',' +  y_min_entry.text + ',')
             ff.write(x_max_entry.text + ',' +  y_max_entry.text + ',' + object_type_entry.text + '\n')
+            file_1 =  img_file.replace('none', blending_list[i])
+            file_2 = file_1.replace('.jpg','.txt')
+            file_3 = file_2.replace('images','labels')
+            with open(file_3, "w") as ff1:
+                str1 = str(round(x_yolo,5))
+                str2 = str(round(y_yolo,5))
+                str3 = str(round(w_yolo,5))
+                str4 = str(round(h_yolo,5))
+                ff1.write(obj_yolo + ' ' + str1 + ' ' + str2 + ' ' + str3 + ' ' + str4)
 
     xmlstr = xml.dom.minidom.parseString(tostring(top)).toprettyxml(indent="    ")
     with open(anno_file, "w") as f:
@@ -642,11 +660,6 @@ def create_image_anno(objects, distractor_objects, img_file, anno_file, bg_file,
         cv2.imwrite(anno_im_file,im_out)
 
 
-    #backgrounds[ii].save(anno_im_file)
-    
-    #print(anno_file)
-    #print(anno_im_file)
-    #print("two time")
    
 def gen_syn_data(img_files, labels, img_dir, anno_dir, scale_augment, rotation_augment, dontocclude, add_distractors):
     '''Creates list of objects and distrctor objects to be pasted on what images.
@@ -750,11 +763,14 @@ def generate_synthetic_dataset(args):
 
     anno_dir = os.path.join(args.exp, 'annotations')
     img_dir = os.path.join(args.exp, 'images')
+    lab_dir = os.path.join(args.exp, 'labels')
     if not os.path.exists(os.path.join(anno_dir)):
         os.makedirs(anno_dir)
     if not os.path.exists(os.path.join(img_dir)):
         os.makedirs(img_dir)
-    
+    if not os.path.exists(os.path.join(lab_dir)):
+        os.makedirs(lab_dir)
+   
     syn_img_files, anno_files = gen_syn_data(img_files, labels, img_dir, anno_dir, args.scale, args.rotation, args.dontocclude, args.add_distractors)
     write_imageset_file(args.exp, syn_img_files, anno_files)
 

@@ -110,6 +110,21 @@ train_out/images/1_motion.jpg,333,1,730,525,owl
 
 Additionally there are the labels and annotations in `*.txt` and `*.xml` files. 
 
+The annotations are also saved in (almost) yolo format. Use the directories 'images' and 'labels'. The label files are one file per image with the same name as the image except a '*.txt' extension.
+
+<pre>
+object_id x_center y_center width height
+
+owl 0.5752 0.586 0.30273 0.748
+
+</pre>
+
+This is not exactly yolo format, the 'owl' needs to be an integer corresponding to the object. You can replace 'owl' with an interger (here: 3) with following bash command:
+
+<pre>
+sed -i -e 's/owl/3/g' *.txt
+</pre>
+
 Some of the options can be choosen as arguments:
 <pre>
 usage: dataset_generator.py [-h] [--selected] [--scale] [--rotation]  
